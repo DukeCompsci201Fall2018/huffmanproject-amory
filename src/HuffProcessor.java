@@ -15,16 +15,7 @@ import java.util.PriorityQueue;
 
 public class HuffProcessor {
 
-/**
- * Although this class has a history of several years,
- * it is starting from a blank-slate, new and clean implementation
- * as of Fall 2018.
- * <P>
- * Changes include relying solely on a tree for header information
- * and including debug and bits read/written information
- * 
- * @author Owen Astrachan
- */
+
 
 	public static final int BITS_PER_WORD = 8;
 	public static final int BITS_PER_INT = 32;
@@ -69,7 +60,7 @@ public class HuffProcessor {
 		out.close();
 	}
 	/*
-	 * 
+	 * this writes the compressed bits haha
 	 */
 	private void writeCompressedBits(String[] codings, BitInputStream in, BitOutputStream out) {
 		while(true) {
@@ -85,6 +76,15 @@ public class HuffProcessor {
 		
 	}
 	
+
+	private String[] makeCodingsFromTree(HuffNode root) {
+		String[] codings = new String[ALPH_SIZE + 1];
+	    codingHelper(root,"",codings);
+	    return codings;
+
+		
+	}
+	
 	private void writeReader(HuffNode root, BitOutputStream out) {
 		if(root.myRight == null && root.myLeft == null) {
 			out.writeBits(1,1);
@@ -96,13 +96,6 @@ public class HuffProcessor {
 		writeReader(root.myRight, out);
 	}
 
-	private String[] makeCodingsFromTree(HuffNode root) {
-		String[] codings = new String[ALPH_SIZE + 1];
-	    codingHelper(root,"",codings);
-	    return codings;
-
-		
-	}
 
 	private String [] codingHelper(HuffNode root, String string, String[] encodings) {
 		if (root.myRight == null && root.myLeft == null) {
@@ -167,25 +160,25 @@ public class HuffProcessor {
 		if (bits !=HUFF_TREE) {
 			throw new HuffException("Illegal header starts with" + bits);
 		}
-		HuffNode root = readTreeReader(in);
+		HuffNode root = readerGuy(in);
 		readCompressedBits(root, in, out);
 		out.close();
 	
 	}
 
-	private HuffNode readTreeReader(BitInputStream in) {
+	private HuffNode readerGuy(BitInputStream in) {
 		int b = in.readBits(1);
+		if (b == 0) {
+			HuffNode l = readerGuy(in);
+			HuffNode r = readerGuy(in);
+			return new HuffNode(0,0,l,r);
+		}
 		if (b == -1) {
 			throw new HuffException("Illegal header starts with" + b);
 		}
-		if (b == 0) {
-			HuffNode l = readTreeReader(in);
-			HuffNode r = readTreeReader(in);
-			return new HuffNode(0,0,l,r);
-		}
 		else {
-			int value = in.readBits(BITS_PER_WORD+1);
-			return new HuffNode(value,0,null,null);
+			int x = in.readBits(BITS_PER_WORD+1);
+			return new HuffNode(x,0,null,null);
 		}
 	}
 
